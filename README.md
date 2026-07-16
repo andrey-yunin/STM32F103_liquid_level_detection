@@ -1,14 +1,14 @@
-# DDS-240 LLD Executor
+# LLD Executor (Universal Frequency Sensor)
 
 ![MCU](https://img.shields.io/badge/MCU-STM32F103C8T6-03234B)
 ![RTOS](https://img.shields.io/badge/RTOS-FreeRTOS%20CMSIS--V2-0B6E4F)
 ![CAN](https://img.shields.io/badge/CAN-1%20Mbit%2Fs-2E6FBB)
 ![Detector](https://img.shields.io/badge/Detector-TLC555CDR-8B0000)
 
-Firmware for the **LLD (Leak/Liquid Detection) Executor** board in the DDS-240
-analyzer ecosystem. The board is an STM32F103-based low-level executor responsible
-for detecting liquid presence by measuring frequency shift of a TLC555CDR-based
-dual-channel oscillator and reporting results to the DDS-240 Conductor over CAN.
+Firmware for the **LLD (Liquid Level Detection) Executor** — a universal
+dual-channel frequency sensor based on STM32F103 and TLC555CDR. Measures
+frequency shift between two oscillator channels (needle and reference) to detect
+liquid presence, with application-agnostic CAN interface.
 
 ## Current Status
 
@@ -81,7 +81,7 @@ TLC555 CH2 (PA7) -> TIM3 capture IRQ -> period buffer -> task_lld_controller
 
 ## CAN Executor Contract
 
-DDS-240 executor CAN profile:
+Executor CAN profile:
 
 - 29-bit Extended ID only
 - strict `DLC = 8`
@@ -156,8 +156,8 @@ readme/
 ## Documentation
 
 This firmware repository contains the publishable firmware project. During local
-development, detailed DDS-240 ecosystem documentation is maintained in the
-workspace-level `DDS-240_readme` folder. The local pointer file is:
+development, detailed project documentation is maintained in the workspace-level
+`DDS-240_readme` folder (DDS-240 ecosystem workspace). The local pointer file is:
 
 ```text
 readme/README.md
