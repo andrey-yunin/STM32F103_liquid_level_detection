@@ -15,10 +15,12 @@ liquid presence, with application-agnostic CAN interface.
 | Area | Status |
 | --- | --- |
 | STM32CubeIDE project | Generated, CubeMX baseline configured |
-| TIM3 dual input capture (CH1+CH2) | Configured (Prescaler=64, ICFilter=4) |
-| CAN transport | Configured (1 Mbit/s) |
-| FreeRTOS task baseline | Generated (4 tasks) |
-| App-layer integration | Pending |
+| TIM3 dual input capture (CH1+CH2) | Configured (Prescaler=0, 64 MHz, ICFilter=4) |
+| CAN transport | Configured (1 Mbit/s), service layer active |
+| FreeRTOS task baseline | 4 tasks: CAN handler, Dispatcher, LLD Controller, Watchdog |
+| App-layer integration | Complete (Stage 3-4, build passes clean) |
+| LLD core driver | TIM3 capture + differential filter + state machine |
+| Watchdog supervisor | IWDG + heartbeat (CAN/Dispatcher/LLD) |
 
 ## Hardware Baseline
 

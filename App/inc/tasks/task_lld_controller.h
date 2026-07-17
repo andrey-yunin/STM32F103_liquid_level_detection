@@ -8,6 +8,6 @@
 #ifndef INC_TASKS_TASK_LLD_CONTROLLER_H_
 #define INC_TASKS_TASK_LLD_CONTROLLER_H_
 
-
+void app_start_task_lld_controller(void *argument);
 
 #endif /* INC_TASKS_TASK_LLD_CONTROLLER_H_ */

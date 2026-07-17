@@ -22,6 +22,12 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "app_queues.h"
+#include "app_config.h"
+#include "task_can_handler.h"
+#include "task_dispatcher.h"
+#include "task_lld_controller.h"
+#include "task_watchdog.h"
 
 /* USER CODE END Includes */
 
@@ -76,6 +82,11 @@ const osThreadAttr_t task_watchdog_attributes = {
   .priority = (osPriority_t) osPriorityNormal,
 };
 /* USER CODE BEGIN PV */
+
+osMessageQueueId_t can_rx_queueHandle;
+osMessageQueueId_t can_tx_queueHandle;
+osMessageQueueId_t dispatcher_queueHandle;
+osMessageQueueId_t lld_queueHandle;
 
 /* USER CODE END PV */
 
@@ -152,6 +163,12 @@ int main(void)
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
+
+  can_rx_queueHandle = osMessageQueueNew(CAN_RX_QUEUE_LEN, sizeof(CanRxFrame_t), NULL);
+  can_tx_queueHandle = osMessageQueueNew(CAN_TX_QUEUE_LEN, sizeof(CanTxFrame_t), NULL);
+  dispatcher_queueHandle = osMessageQueueNew(DISPATCHER_QUEUE_LEN, sizeof(ParsedCanCommand_t), NULL);
+  lld_queueHandle = osMessageQueueNew(LLD_QUEUE_LEN, sizeof(LldCommand_t), NULL);
+
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
@@ -314,7 +331,7 @@ static void MX_TIM3_Init(void)
 
   /* USER CODE END TIM3_Init 1 */
   htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 64;
+  htim3.Init.Prescaler = 0;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim3.Init.Period = 65535;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -397,6 +414,9 @@ static void MX_GPIO_Init(void)
 void start_task_can_handler(void *argument)
 {
   /* USER CODE BEGIN 5 */
+
+	app_start_task_can_handler(argument);
+
   /* Infinite loop */
   for(;;)
   {
@@ -415,6 +435,9 @@ void start_task_can_handler(void *argument)
 void start_task_dispatcher(void *argument)
 {
   /* USER CODE BEGIN start_task_dispatcher */
+
+	app_start_task_dispatcher(argument);
+
   /* Infinite loop */
   for(;;)
   {
@@ -433,6 +456,9 @@ void start_task_dispatcher(void *argument)
 void start_task_lld_controller(void *argument)
 {
   /* USER CODE BEGIN start_task_lld_controller */
+
+	app_start_task_lld_controller(argument);
+
   /* Infinite loop */
   for(;;)
   {
@@ -451,6 +477,9 @@ void start_task_lld_controller(void *argument)
 void start_task_watchdog(void *argument)
 {
   /* USER CODE BEGIN start_task_watchdog */
+
+	app_start_task_watchdog(argument);
+
   /* Infinite loop */
   for(;;)
   {
