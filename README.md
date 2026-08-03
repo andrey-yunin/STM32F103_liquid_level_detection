@@ -20,6 +20,8 @@ liquid presence, with application-agnostic CAN interface.
 | FreeRTOS task baseline | 4 tasks: CAN handler, Dispatcher, LLD Controller, Watchdog |
 | App-layer integration | Complete (Stage 3-4, build passes clean) |
 | LLD core driver | TIM3 capture + differential filter + state machine |
+| LLD CAN domain (Stage 5) | ARM / DISARM / GET_STATUS + TOUCH_EVENT implemented |
+| app_flash config page (Stage 6) | Implemented: COMMIT / SET_NODE_ID / FACTORY_RESET по канону экосистемы |
 | Watchdog supervisor | IWDG + heartbeat (CAN/Dispatcher/LLD) |
 
 ## Hardware Baseline
@@ -88,28 +90,37 @@ Executor CAN profile:
 - 29-bit Extended ID only
 - strict `DLC = 8`
 - Conductor address: `0x10`
-- LLD default NodeID: `0x61`
+- LLD default NodeID: `0x70` (синоним `CAN_ADDR_LLD_BOARD` в `dds240_global_config.h`)
 - LLD device type: `0x06`
 
 Service commands implemented:
 
 | Command | Code | Status |
 | --- | --- | --- |
-| `GET_DEVICE_INFO` | `0xF001` | pending |
-| `REBOOT` | `0xF002` | pending |
-| `FLASH_COMMIT` | `0xF003` | pending |
-| `GET_UID` | `0xF004` | pending |
-| `SET_NODE_ID` | `0xF005` | pending |
-| `FACTORY_RESET` | `0xF006` | pending |
-| `GET_STATUS` | `0xF007` | pending |
+| `GET_DEVICE_INFO` | `0xF001` | implemented |
+| `REBOOT` | `0xF002` | implemented |
+| `FLASH_COMMIT` | `0xF003` | implemented: `AppConfig_Commit()` (RAM -> Flash) |
+| `GET_UID` | `0xF004` | implemented |
+| `SET_NODE_ID` | `0xF005` | implemented: байт 2 payload, RAM-only, NACK `CAN_ERR_INVALID_PARAM` |
+| `FACTORY_RESET` | `0xF006` | implemented: Magic Key `0xDEAD`, стирание + reboot |
+| `GET_STATUS` | `0xF007` | implemented (common metrics `0x0001..0x0012`) |
 
 LLD domain commands:
 
 | Command | Code | Current behavior |
 | --- | --- | --- |
-| `LLD_ARM` | `0xE701` | pending |
-| `LLD_GET_STATUS` | `0xE702` | pending |
-| `LLD_SET_THRESHOLD` | `0xE703` | pending |
+| `LLD_GET_STATUS` | `0x0701` | implemented: `f_diff(int32) + baseline(int32) + state(uint8)` = 9 B → 2 DATA |
+| `LLD_ARM` | `0x0702` | implemented: arm + baseline reset |
+| `LLD_DISARM` | `0x0703` | implemented |
+| `LLD_TOUCH_EVENT` | `0x0704` | implemented (async event, DATA + DONE) |
+
+> **DATA-фрейм и `cmd_code`.** В DATA-фреймах `cmd_code` намеренно не
+> передаётся — это стандарт экосистемы (см. `STM32F103_photometer`):
+> в payload DATA только 6 командных байтов, корреляция строится через
+> транзакцию `ACK cmd → DATA... → DONE/NACK cmd`. Асинхронные события
+> (TOUCH_EVENT) идентифицируются по `cmd_code` в завершающем DONE.
+> Открытый пункт: определить содержимое DATA для TOUCH_EVENT (сейчас нулевое).
+> Подробнее: `LLD_EXECUTOR_REPORT.md`, раздел 14.
 
 Normal response pattern:
 

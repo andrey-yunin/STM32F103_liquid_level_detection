@@ -28,6 +28,7 @@
 #include "task_dispatcher.h"
 #include "task_lld_controller.h"
 #include "task_watchdog.h"
+#include "app_flash.h"
 
 /* USER CODE END Includes */
 
@@ -143,6 +144,8 @@ int main(void)
   MX_IWDG_Init();
   MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
+
+  AppConfig_Init();
 
   /* USER CODE END 2 */
 

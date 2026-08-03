@@ -107,9 +107,14 @@ void app_start_task_dispatcher(void *argument)
         }
 
         case CAN_CMD_SRV_FLASH_COMMIT: {
-            // --- COMMIT: заглушка NACK (app_flash будет в Stage 6) ---
-            CAN_SendNackPublic(parsed.cmd_code, CAN_ERR_FLASH_WRITE);
-            break;
+        	// --- COMMIT: сохранение RAM-настроек во Flash ---
+        	if (AppConfig_Commit()) {
+        		CAN_SendDone(parsed.cmd_code, 0);
+        		}
+        	else {
+        		CAN_SendNackPublic(parsed.cmd_code, CAN_ERR_FLASH_WRITE);
+        		}
+        	break;
         }
 
         case CAN_CMD_SRV_GET_UID: {
@@ -130,15 +135,33 @@ void app_start_task_dispatcher(void *argument)
         }
 
         case CAN_CMD_SRV_SET_NODE_ID: {
-            // --- SET_NODE_ID: заглушка NACK (app_flash будет в Stage 6) ---
-            CAN_SendNackPublic(parsed.cmd_code, CAN_ERR_FLASH_WRITE);
-            break;
+        	// --- SET_NODE_ID: новый адрес из байта 2 payload (device_id) ---
+        	// Канон экосистемы: RAM-only, DONE с нового адреса, NACK INVALID_PARAM.
+        	// ACK уже отправлен со СТАРОГО адреса (в начале цикла).
+        	if (parsed.device_id >= 0x02 && parsed.device_id <= 0x7F &&
+        			parsed.device_id != CAN_ADDR_CONDUCTOR) {
+        	        AppConfig_SetPerformerID(parsed.device_id);
+        	        CAN_SendDone(parsed.cmd_code, parsed.device_id);
+        	        }
+        	else {
+        		CAN_SendNackPublic(parsed.cmd_code, CAN_ERR_INVALID_PARAM);
+        		}
+        	break;
         }
 
         case CAN_CMD_SRV_FACTORY_RESET: {
-            // --- FACTORY_RESET: заглушка NACK (app_flash будет в Stage 6) ---
-            CAN_SendNackPublic(parsed.cmd_code, CAN_ERR_FLASH_WRITE);
-            break;
+        	// --- FACTORY_RESET: стирание Flash-конфигурации по Magic Key 0xDEAD ---
+        	uint16_t key = (uint16_t)(parsed.data[0] | ((uint16_t)parsed.data[1] << 8));
+        	if (key == SRV_MAGIC_FACTORY_RESET) {
+        		AppConfig_FactoryReset();
+        	    CAN_SendDone(parsed.cmd_code, 0);
+        	    osDelay(100);
+        	    NVIC_SystemReset();
+        	    }
+        	else {
+        		CAN_SendNackPublic(parsed.cmd_code, CAN_ERR_INVALID_KEY);
+        		}
+        	break;
         }
 
         case CAN_CMD_SRV_GET_STATUS: {
