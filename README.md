@@ -119,7 +119,10 @@ LLD domain commands:
 > в payload DATA только 6 командных байтов, корреляция строится через
 > транзакцию `ACK cmd → DATA... → DONE/NACK cmd`. Асинхронные события
 > (TOUCH_EVENT) идентифицируются по `cmd_code` в завершающем DONE.
-> Открытый пункт: определить содержимое DATA для TOUCH_EVENT (сейчас нулевое).
+> **DATA-контракт TOUCH_EVENT (03.08.2026):** одиночный DATA-фрейм
+> `0x0704` — payload byte 0..3 `f_diff_hz(int32 LE)` на момент триггера,
+> byte 4 `state` (`LLD_STATE_TRIGGERED`), byte 5 reserved = 0. Снимок
+> захватывается в `LLD_Controller_ProcessSample(&trigger)`.
 > Подробнее: `LLD_EXECUTOR_REPORT.md`, раздел 14.
 
 Normal response pattern:

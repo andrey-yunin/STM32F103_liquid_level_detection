@@ -51,7 +51,7 @@ bool LLD_Controller_HandleCommand(uint16_t cmd_code)
     }
 }
 
-bool LLD_Controller_ProcessSample(void)
+bool LLD_Controller_ProcessSample(LldControllerStatus_t *out_trigger)
 {
     if (s_state != LLD_STATE_ARMED) return false;
 
@@ -61,6 +61,10 @@ bool LLD_Controller_ProcessSample(void)
     if (LLD_Filter_Process(&sample)) {
         LLD_Timer_Stop();
         s_state = LLD_STATE_TRIGGERED;
+        if (out_trigger != NULL) {
+            out_trigger->state = s_state;
+            LLD_Filter_GetStatus(&out_trigger->filter);
+        }
         return true;
     }
 

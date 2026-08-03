@@ -76,8 +76,19 @@ void app_start_task_lld_controller(void *argument)
         }
 
         // 2. Если вооружены — опрос семпла
-        if (LLD_Controller_ProcessSample()) {
+        LldControllerStatus_t trigger;
+        if (LLD_Controller_ProcessSample(&trigger)) {
+            // DATA-контракт TOUCH_EVENT (0x0704), одиночный DATA-фрейм:
+            //   byte 0..3: f_diff_hz (int32 LE) на момент триггера
+            //   byte 4:    state (uint8) = LLD_STATE_TRIGGERED
+            //   byte 5:    reserved = 0
             uint8_t data[6] = {0};
+            data[0] = (uint8_t)(trigger.filter.f_diff_hz & 0xFF);
+            data[1] = (uint8_t)((trigger.filter.f_diff_hz >> 8) & 0xFF);
+            data[2] = (uint8_t)((trigger.filter.f_diff_hz >> 16) & 0xFF);
+            data[3] = (uint8_t)((trigger.filter.f_diff_hz >> 24) & 0xFF);
+            data[4] = (uint8_t)trigger.state;
+
             CAN_SendData(CAN_CMD_LLD_TOUCH_EVENT, data, 6);
             CAN_SendDone(CAN_CMD_LLD_TOUCH_EVENT, CAN_DEVICE_TYPE_LLD);
         }

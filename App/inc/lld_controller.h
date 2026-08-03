@@ -30,7 +30,7 @@ typedef struct {
 
 void LLD_Controller_Init(void);
 bool LLD_Controller_HandleCommand(uint16_t cmd_code);
-bool LLD_Controller_ProcessSample(void);
+bool LLD_Controller_ProcessSample(LldControllerStatus_t *out_trigger);
 void LLD_Controller_GetStatus(LldControllerStatus_t *out);
 
 
