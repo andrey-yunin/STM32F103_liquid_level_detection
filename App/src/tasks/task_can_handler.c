@@ -23,10 +23,42 @@
 #include "task_watchdog.h"
 #include "app_flash.h"
 
+// --- Аппаратные CAN-фильтры ---
+#define CAN_FILTER_IDE            (1UL << 2)
+#define CAN_FILTER_MSGTYPE_DST_MASK (0x03FFUL << 19)  // dst(8) + msg_type(2)
+
 extern CAN_HandleTypeDef hcan;
 
 // --- Счётчики CAN diagnostics ---
 static volatile CanDiagnostics_t g_can_diag;
+
+static void CAN_ConfigureFilterBank(uint8_t bank, uint8_t dst_addr, uint8_t msg_type)
+{
+    CAN_FilterTypeDef sFilterConfig;
+    sFilterConfig.FilterBank = bank;
+    sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
+    sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
+    sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;
+    sFilterConfig.SlaveStartFilterBank = 14;
+    sFilterConfig.FilterActivation = ENABLE;
+
+    uint32_t exid = CAN_BUILD_ID(0, msg_type, dst_addr, 0);
+    uint32_t id   = (exid << 3) | CAN_FILTER_IDE;
+    uint32_t mask = CAN_FILTER_MSGTYPE_DST_MASK | CAN_FILTER_IDE;
+
+    sFilterConfig.FilterIdHigh     = (uint16_t)(id >> 16);
+    sFilterConfig.FilterIdLow      = (uint16_t)(id & 0xFFFF);
+    sFilterConfig.FilterMaskIdHigh = (uint16_t)(mask >> 16);
+    sFilterConfig.FilterMaskIdLow  = (uint16_t)(mask & 0xFFFF);
+
+    if (HAL_CAN_ConfigFilter(&hcan, &sFilterConfig) != HAL_OK)
+        Error_Handler();
+}
+
+void CAN_UpdateDirectFilter(uint8_t device_id)
+{
+    CAN_ConfigureFilterBank(1, device_id, CAN_MSG_TYPE_COMMAND);
+}
 
 // --- Вспомогательные функции диагностики ---
 
@@ -218,23 +250,11 @@ void app_start_task_can_handler(void *argument)
     uint32_t txMailbox;
 
     // --- Настройка аппаратных CAN-фильтров ---
-    // Permissive: принимаем только 29-bit Extended ID (IDE=1).
-    // Фильтрация по NodeID и типу сообщения — программно ниже,
-    // по рантайм-адресу (корректно работает после SET_NODE_ID).
-    CAN_FilterTypeDef sFilterConfig;
-    sFilterConfig.FilterBank = 0;
-    sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
-    sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
-    sFilterConfig.FilterIdHigh = 0x0000;
-    sFilterConfig.FilterIdLow = 0x0000 | (1UL << 2);  // IDE=1
-    sFilterConfig.FilterMaskIdHigh = 0x0000;
-    sFilterConfig.FilterMaskIdLow = 0x0000 | (1UL << 2);
-    sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;
-    sFilterConfig.FilterActivation = ENABLE;
-    sFilterConfig.SlaveStartFilterBank = 14;
+    // Bank 0: broadcast COMMAND; Bank 1: direct COMMAND на рантайм-адрес.
+    // Чужие dst / не-COMMAND / non-ext отсекаются аппаратно (без прерываний).
+    CAN_ConfigureFilterBank(0, CAN_ADDR_BROADCAST, CAN_MSG_TYPE_COMMAND);
+    CAN_ConfigureFilterBank(1, (uint8_t)AppConfig_GetPerformerID(), CAN_MSG_TYPE_COMMAND);
 
-    if (HAL_CAN_ConfigFilter(&hcan, &sFilterConfig) != HAL_OK)
-    	Error_Handler();
 
     // --- Запуск CAN ---
     if (HAL_CAN_Start(&hcan) != HAL_OK)

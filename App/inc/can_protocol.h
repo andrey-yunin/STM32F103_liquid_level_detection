@@ -131,6 +131,7 @@ void CAN_SendNackPublic(uint16_t cmd_code, uint16_t error_code);
 void CAN_SendDone(uint16_t cmd_code, uint8_t device_id);
 void CAN_SendData(uint16_t cmd_code, uint8_t *data, uint8_t len);
 void CAN_SendDataFragmented(uint16_t cmd_code, const uint8_t *data, uint8_t total_len);
+void CAN_UpdateDirectFilter(uint8_t device_id);
 
 // --- Прототипы диагностики CAN ---
 void CAN_Diagnostics_GetSnapshot(CanDiagnostics_t *out);

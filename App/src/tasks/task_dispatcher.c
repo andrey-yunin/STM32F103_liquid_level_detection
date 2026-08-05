@@ -119,16 +119,10 @@ void app_start_task_dispatcher(void *argument)
 
         case CAN_CMD_SRV_GET_UID: {
             uint8_t uid[12];
-            uint8_t data[6];
             AppConfig_GetMCU_UID(uid);
 
-            // Пакет 1: UID[0..5]
-            memcpy(data, &uid[0], 6);
-            CAN_SendData(parsed.cmd_code, data, 6);
-
-            // Пакет 2: UID[6..11]
-            memcpy(data, &uid[6], 6);
-            CAN_SendData(parsed.cmd_code, data, 6);
+            // --- GET_UID: фрагментация 12 Б -> 2 DATA (seq 0x00, 0x81), канон экосистемы ---
+            CAN_SendDataFragmented(parsed.cmd_code, uid, 12);
 
             CAN_SendDone(parsed.cmd_code, CAN_DEVICE_TYPE_LLD);
             break;
@@ -141,12 +135,13 @@ void app_start_task_dispatcher(void *argument)
         	if (parsed.device_id >= 0x02 && parsed.device_id <= 0x7F &&
         			parsed.device_id != CAN_ADDR_CONDUCTOR) {
         	        AppConfig_SetPerformerID(parsed.device_id);
+        	        CAN_UpdateDirectFilter(parsed.device_id);   // bank1 на новый адрес
         	        CAN_SendDone(parsed.cmd_code, parsed.device_id);
         	        }
-        	else {
-        		CAN_SendNackPublic(parsed.cmd_code, CAN_ERR_INVALID_PARAM);
-        		}
-        	break;
+        	    else {
+        	        CAN_SendNackPublic(parsed.cmd_code, CAN_ERR_INVALID_PARAM);
+        	        }
+        	    break;
         }
 
         case CAN_CMD_SRV_FACTORY_RESET: {

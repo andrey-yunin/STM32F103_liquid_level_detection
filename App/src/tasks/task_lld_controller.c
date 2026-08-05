@@ -54,18 +54,26 @@ void app_start_task_lld_controller(void *argument)
                 LldControllerStatus_t status;
                 LLD_Controller_GetStatus(&status);
 
-                uint8_t buf[9];
-                buf[0] = (uint8_t)(status.filter.f_diff_hz & 0xFF);
-                buf[1] = (uint8_t)((status.filter.f_diff_hz >> 8) & 0xFF);
-                buf[2] = (uint8_t)((status.filter.f_diff_hz >> 16) & 0xFF);
-                buf[3] = (uint8_t)((status.filter.f_diff_hz >> 24) & 0xFF);
-                buf[4] = (uint8_t)(status.filter.baseline_hz & 0xFF);
-                buf[5] = (uint8_t)((status.filter.baseline_hz >> 8) & 0xFF);
-                buf[6] = (uint8_t)((status.filter.baseline_hz >> 16) & 0xFF);
-                buf[7] = (uint8_t)((status.filter.baseline_hz >> 24) & 0xFF);
-                buf[8] = (uint8_t)status.state;
+                uint8_t buf[17];
+                buf[0]  = (uint8_t)(status.filter.f1_hz & 0xFF);
+                buf[1]  = (uint8_t)((status.filter.f1_hz >> 8) & 0xFF);
+                buf[2]  = (uint8_t)((status.filter.f1_hz >> 16) & 0xFF);
+                buf[3]  = (uint8_t)((status.filter.f1_hz >> 24) & 0xFF);
+                buf[4]  = (uint8_t)(status.filter.f2_hz & 0xFF);
+                buf[5]  = (uint8_t)((status.filter.f2_hz >> 8) & 0xFF);
+                buf[6]  = (uint8_t)((status.filter.f2_hz >> 16) & 0xFF);
+                buf[7]  = (uint8_t)((status.filter.f2_hz >> 24) & 0xFF);
+                buf[8]  = (uint8_t)(status.filter.f_diff_hz & 0xFF);
+                buf[9]  = (uint8_t)((status.filter.f_diff_hz >> 8) & 0xFF);
+                buf[10] = (uint8_t)((status.filter.f_diff_hz >> 16) & 0xFF);
+                buf[11] = (uint8_t)((status.filter.f_diff_hz >> 24) & 0xFF);
+                buf[12] = (uint8_t)(status.filter.baseline_hz & 0xFF);
+                buf[13] = (uint8_t)((status.filter.baseline_hz >> 8) & 0xFF);
+                buf[14] = (uint8_t)((status.filter.baseline_hz >> 16) & 0xFF);
+                buf[15] = (uint8_t)((status.filter.baseline_hz >> 24) & 0xFF);
+                buf[16] = (uint8_t)status.state;
 
-                CAN_SendDataFragmented(CAN_CMD_LLD_GET_STATUS, buf, 9);
+                CAN_SendDataFragmented(CAN_CMD_LLD_GET_STATUS, buf, 17);
                 CAN_SendDone(CAN_CMD_LLD_GET_STATUS, CAN_DEVICE_TYPE_LLD);
                 break;
             }
